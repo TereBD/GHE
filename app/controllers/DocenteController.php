@@ -87,26 +87,21 @@ final class DocenteController extends Controller
         return [
             'nombre' => trim((string) ($_POST['nombre'] ?? '')),
             'apellido' => trim((string) ($_POST['apellido'] ?? '')),
+            'tipo' => ($_POST['tipo'] ?? '') === 'especialista' ? 'especialista' : 'tutor',
             'horas_maximas' => (int) ($_POST['horas_maximas'] ?? 0),
-            'horas_pat_proyecto' => (int) ($_POST['horas_pat_proyecto'] ?? 0),
+            'horas_pat' => (int) ($_POST['horas_pat'] ?? 0),
+            'horas_proyecto' => (int) ($_POST['horas_proyecto'] ?? 0),
         ];
     }
 
     private function validar(array $data): array
     {
         $errores = [];
-        if (trim($data['nombre'] ?? '') === '') {
-            $errores['nombre'] = 'El nombre es obligatorio.';
-        }
-        if (trim($data['apellido'] ?? '') === '') {
-            $errores['apellido'] = 'El apellido es obligatorio.';
-        }
-        if ((int) ($data['horas_maximas'] ?? 0) < 1) {
-            $errores['horas_maximas'] = 'Las horas máximas deben ser al menos 1.';
-        }
-        if ((int) ($data['horas_pat_proyecto'] ?? 0) < 0) {
-            $errores['horas_pat_proyecto'] = 'Las horas PAT/Proyecto no pueden ser negativas.';
-        }
+        if (trim($data['nombre'] ?? '') === '') $errores['nombre'] = 'El nombre es obligatorio.';
+        if (trim($data['apellido'] ?? '') === '') $errores['apellido'] = 'El apellido es obligatorio.';
+        if ((int) ($data['horas_maximas'] ?? 0) < 1) $errores['horas_maximas'] = 'Las horas máximas deben ser al menos 1.';
+        if ((int) ($data['horas_pat'] ?? 0) < 0) $errores['horas_pat'] = 'No puede ser negativo.';
+        if ((int) ($data['horas_proyecto'] ?? 0) < 0) $errores['horas_proyecto'] = 'No puede ser negativo.';
         return $errores;
     }
 }

@@ -8,7 +8,18 @@ final class Docente
 {
     public static function all(): array
     {
-        $stmt = Database::connection()->query('SELECT * FROM docentes ORDER BY apellido, nombre');
+        return Database::connection()->query('SELECT * FROM docentes ORDER BY apellido, nombre')->fetchAll();
+    }
+
+    public static function tutores(): array
+    {
+        $stmt = Database::connection()->query("SELECT * FROM docentes WHERE tipo = 'tutor' ORDER BY apellido, nombre");
+        return $stmt->fetchAll();
+    }
+
+    public static function especialistas(): array
+    {
+        $stmt = Database::connection()->query("SELECT * FROM docentes WHERE tipo = 'especialista' ORDER BY apellido, nombre");
         return $stmt->fetchAll();
     }
 
@@ -23,14 +34,16 @@ final class Docente
     public static function create(array $data): void
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO docentes (nombre, apellido, horas_maximas, horas_pat_proyecto)
-             VALUES (:nombre, :apellido, :horas_maximas, :horas_pat_proyecto)'
+            'INSERT INTO docentes (nombre, apellido, tipo, horas_maximas, horas_pat, horas_proyecto)
+             VALUES (:nombre, :apellido, :tipo, :horas_maximas, :horas_pat, :horas_proyecto)'
         );
         $stmt->execute([
             'nombre' => $data['nombre'],
             'apellido' => $data['apellido'],
+            'tipo' => $data['tipo'] ?? 'tutor',
             'horas_maximas' => $data['horas_maximas'],
-            'horas_pat_proyecto' => $data['horas_pat_proyecto'],
+            'horas_pat' => $data['horas_pat'],
+            'horas_proyecto' => $data['horas_proyecto'],
         ]);
     }
 
@@ -38,15 +51,19 @@ final class Docente
     {
         $stmt = Database::connection()->prepare(
             'UPDATE docentes
-             SET nombre = :nombre, apellido = :apellido, horas_maximas = :horas_maximas, horas_pat_proyecto = :horas_pat_proyecto
+             SET nombre = :nombre, apellido = :apellido, tipo = :tipo,
+                 horas_maximas = :horas_maximas, horas_pat = :horas_pat,
+                 horas_proyecto = :horas_proyecto
              WHERE id = :id'
         );
         $stmt->execute([
             'id' => $id,
             'nombre' => $data['nombre'],
             'apellido' => $data['apellido'],
+            'tipo' => $data['tipo'] ?? 'tutor',
             'horas_maximas' => $data['horas_maximas'],
-            'horas_pat_proyecto' => $data['horas_pat_proyecto'],
+            'horas_pat' => $data['horas_pat'],
+            'horas_proyecto' => $data['horas_proyecto'],
         ]);
     }
 

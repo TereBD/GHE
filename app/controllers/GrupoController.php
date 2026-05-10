@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../models/Grupo.php';
+require_once __DIR__ . '/../models/NivelModel.php';
+require_once __DIR__ . '/../models/Docente.php';
 
 final class GrupoController extends Controller
 {
@@ -19,6 +21,8 @@ final class GrupoController extends Controller
     {
         $this->view('grupos/form', [
             'grupo' => null,
+            'niveles' => NivelModel::all(),
+            'docentes' => Docente::all(),
             'action' => 'grupos/store',
             'titulo' => 'Nuevo grupo',
         ]);
@@ -26,17 +30,23 @@ final class GrupoController extends Controller
 
     public function store(): void
     {
-        $nombre = trim((string) ($_POST['nombre'] ?? ''));
-        if ($nombre === '') {
+        $errores = $this->validar($_POST);
+        if (!empty($errores)) {
             $this->view('grupos/form', [
-                'grupo' => null,
+                'grupo' => $_POST,
+                'niveles' => NivelModel::all(),
+                'docentes' => Docente::all(),
                 'action' => 'grupos/store',
                 'titulo' => 'Nuevo grupo',
-                'errores' => ['nombre' => 'El nombre es obligatorio.'],
+                'errores' => $errores,
             ]);
             return;
         }
-        Grupo::create($nombre);
+        $nivelId = (int) ($_POST['nivel_id'] ?? 0);
+        $letra = trim((string) ($_POST['letra'] ?? ''));
+        $nombre = self::generarNombre($nivelId, $letra);
+        $tutorId = !empty($_POST['tutor_id']) ? (int) $_POST['tutor_id'] : null;
+        Grupo::create($nombre, $nivelId, $letra, $tutorId);
         $this->redirect('grupos/index');
     }
 
@@ -51,6 +61,8 @@ final class GrupoController extends Controller
         }
         $this->view('grupos/form', [
             'grupo' => $grupo,
+            'niveles' => NivelModel::all(),
+            'docentes' => Docente::all(),
             'action' => 'grupos/update&id=' . $id,
             'titulo' => 'Editar grupo',
         ]);
@@ -59,17 +71,23 @@ final class GrupoController extends Controller
     public function update(): void
     {
         $id = (int) ($_GET['id'] ?? 0);
-        $nombre = trim((string) ($_POST['nombre'] ?? ''));
-        if ($nombre === '') {
+        $errores = $this->validar($_POST);
+        if (!empty($errores)) {
             $this->view('grupos/form', [
-                'grupo' => null,
+                'grupo' => $_POST,
+                'niveles' => NivelModel::all(),
+                'docentes' => Docente::all(),
                 'action' => 'grupos/update&id=' . $id,
                 'titulo' => 'Editar grupo',
-                'errores' => ['nombre' => 'El nombre es obligatorio.'],
+                'errores' => $errores,
             ]);
             return;
         }
-        Grupo::update($id, $nombre);
+        $nivelId = (int) ($_POST['nivel_id'] ?? 0);
+        $letra = trim((string) ($_POST['letra'] ?? ''));
+        $nombre = self::generarNombre($nivelId, $letra);
+        $tutorId = !empty($_POST['tutor_id']) ? (int) $_POST['tutor_id'] : null;
+        Grupo::update($id, $nombre, $nivelId, $letra, $tutorId);
         $this->redirect('grupos/index');
     }
 
@@ -78,5 +96,19 @@ final class GrupoController extends Controller
         $id = (int) ($_GET['id'] ?? 0);
         Grupo::delete($id);
         $this->redirect('grupos/index');
+    }
+
+    private static function generarNombre(int $nivelId, string $letra): string
+    {
+        $nivel = NivelModel::find($nivelId);
+        return ($nivel['nombre'] ?? '') . $letra;
+    }
+
+    private function validar(array $data): array
+    {
+        $errores = [];
+        if ((int) ($data['nivel_id'] ?? 0) <= 0) $errores['nivel_id'] = 'Selecciona un nivel.';
+        if (trim($data['letra'] ?? '') === '') $errores['letra'] = 'Introduce la letra del grupo.';
+        return $errores;
     }
 }

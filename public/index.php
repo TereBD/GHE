@@ -9,8 +9,9 @@ require_once __DIR__ . '/../app/controllers/DocenteController.php';
 require_once __DIR__ . '/../app/controllers/HorarioController.php';
 require_once __DIR__ . '/../app/controllers/AsignaturaController.php';
 require_once __DIR__ . '/../app/controllers/GrupoController.php';
-require_once __DIR__ . '/../app/controllers/DistribucionController.php';
 require_once __DIR__ . '/../app/controllers/AsignacionController.php';
+require_once __DIR__ . '/../app/controllers/NivelController.php';
+require_once __DIR__ . '/../app/controllers/EtapaController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 
 $route = $_GET['r'] ?? 'auth/login';
@@ -37,7 +38,8 @@ $routes = [
     'asignaturas' => new AsignaturaController(),
     'grupos' => new GrupoController(),
     'asignaciones' => new AsignacionController(),
-    'distribucion' => new DistribucionController(),
+    'niveles' => new NivelController(),
+    'etapas' => new EtapaController(),
     'horarios' => new HorarioController(),
     'auth' => new AuthController(),
 ];

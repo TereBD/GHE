@@ -15,7 +15,9 @@
             <a href="/GHE/public/index.php?r=asignaturas/index">Asignaturas</a>
             <a href="/GHE/public/index.php?r=grupos/index">Grupos</a>
             <a href="/GHE/public/index.php?r=asignaciones/index">Asignaciones</a>
-            <a href="/GHE/public/index.php?r=distribucion/index">Distribución</a>
+            <a href="/GHE/public/index.php?r=etapas/index">Etapas</a>
+            <a href="/GHE/public/index.php?r=niveles/index">Niveles</a>
+            <a href="/GHE/public/index.php?r=niveles/sesiones">Sesiones</a>
             <a href="/GHE/public/index.php?r=horarios/index">Horarios</a>
             <?php if (isset($_SESSION['usuario'])): ?>
                 <a href="/GHE/public/index.php?r=auth/logout">Salir (<?= htmlspecialchars($_SESSION['usuario']) ?>)</a>

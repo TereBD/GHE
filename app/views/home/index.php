@@ -33,9 +33,9 @@
             <td><a class="btn btn-primary btn-small" href="/GHE/public/index.php?r=asignaciones/index">Acceder</a></td>
         </tr>
         <tr>
-            <td>Distribución horaria</td>
-            <td>Definir sesiones semanales por grupo y asignatura</td>
-            <td><a class="btn btn-primary btn-small" href="/GHE/public/index.php?r=distribucion/index">Acceder</a></td>
+            <td>Niveles y sesiones</td>
+            <td>Gestionar etapas, niveles/cursos y definir sesiones semanales por asignatura (vista matriz)</td>
+            <td><a class="btn btn-primary btn-small" href="/GHE/public/index.php?r=niveles/index">Acceder</a></td>
         </tr>
         <tr>
             <td>Horarios</td>

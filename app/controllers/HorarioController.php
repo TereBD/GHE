@@ -18,7 +18,7 @@ final class HorarioController extends Controller
             'horarioGrupos' => $horarioGrupos,
             'horarioDocentes' => $horarioDocentes,
             'docentes' => Docente::all(),
-            'grupos' => Grupo::all(),
+            'grupos' => Grupo::reales(),
             'error' => null,
             'titulo' => 'Horarios',
         ]);
@@ -35,7 +35,7 @@ final class HorarioController extends Controller
                 'horarioGrupos' => $horarioGrupos,
                 'horarioDocentes' => $horarioDocentes,
                 'docentes' => Docente::all(),
-                'grupos' => Grupo::all(),
+                'grupos' => Grupo::reales(),
                 'error' => null,
                 'titulo' => 'Horario generado',
             ]);
@@ -44,7 +44,7 @@ final class HorarioController extends Controller
                 'horarioGrupos' => [],
                 'horarioDocentes' => [],
                 'docentes' => Docente::all(),
-                'grupos' => Grupo::all(),
+                'grupos' => Grupo::reales(),
                 'error' => $e->getMessage(),
                 'titulo' => 'Horarios',
             ]);

@@ -22,13 +22,24 @@
         <input type="text" name="apellido" required value="<?= htmlspecialchars($docente['apellido'] ?? '') ?>">
         <div class="error-text"><?= htmlspecialchars($errores['apellido'] ?? '') ?></div>
 
-        <label>Horas máximas</label>
+        <label>Tipo</label>
+        <select name="tipo">
+            <option value="tutor" <?= ($docente['tipo'] ?? 'tutor') === 'tutor' ? 'selected' : '' ?>>Tutor (asigna grupo + asignaturas)</option>
+            <option value="especialista" <?= ($docente['tipo'] ?? '') === 'especialista' ? 'selected' : '' ?>>Especialista (asigna asignatura + grupos)</option>
+        </select>
+        <div class="error-text"><?= htmlspecialchars($errores['tipo'] ?? '') ?></div>
+
+        <label>Horas máximas semanales</label>
         <input type="number" name="horas_maximas" min="1" required value="<?= (int) ($docente['horas_maximas'] ?? 18) ?>">
         <div class="error-text"><?= htmlspecialchars($errores['horas_maximas'] ?? '') ?></div>
 
-        <label>Horas PAT/Proyecto</label>
-        <input type="number" name="horas_pat_proyecto" min="0" required value="<?= (int) ($docente['horas_pat_proyecto'] ?? 0) ?>">
-        <div class="error-text"><?= htmlspecialchars($errores['horas_pat_proyecto'] ?? '') ?></div>
+        <label>Horas PAT</label>
+        <input type="number" name="horas_pat" min="0" required value="<?= (int) ($docente['horas_pat'] ?? 0) ?>">
+        <div class="error-text"><?= htmlspecialchars($errores['horas_pat'] ?? '') ?></div>
+
+        <label>Horas Proyecto</label>
+        <input type="number" name="horas_proyecto" min="0" required value="<?= (int) ($docente['horas_proyecto'] ?? 0) ?>">
+        <div class="error-text"><?= htmlspecialchars($errores['horas_proyecto'] ?? '') ?></div>
 
         <div class="form-actions">
             <button class="btn btn-success" type="submit">Guardar</button>

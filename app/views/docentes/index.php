@@ -11,8 +11,10 @@
             <th>ID</th>
             <th>Nombre</th>
             <th>Apellido</th>
+            <th>Tipo</th>
             <th>Horas máximas</th>
-            <th>Horas PAT/Proyecto</th>
+            <th>Horas PAT</th>
+            <th>Horas Proyecto</th>
             <th>Acciones</th>
         </tr>
         </thead>
@@ -22,8 +24,10 @@
                 <td><?= (int) $docente['id'] ?></td>
                 <td><?= htmlspecialchars($docente['nombre']) ?></td>
                 <td><?= htmlspecialchars($docente['apellido']) ?></td>
+                <td><?= ($docente['tipo'] ?? 'tutor') === 'especialista' ? 'Especialista' : 'Tutor' ?></td>
                 <td><?= (int) $docente['horas_maximas'] ?></td>
-                <td><?= (int) $docente['horas_pat_proyecto'] ?></td>
+                <td><?= (int) ($docente['horas_pat'] ?? 0) ?></td>
+                <td><?= (int) ($docente['horas_proyecto'] ?? 0) ?></td>
                 <td>
                     <a class="btn btn-primary btn-small" href="/GHE/public/index.php?r=docentes/edit&id=<?= (int) $docente['id'] ?>">Editar</a>
                     <form method="post" action="/GHE/public/index.php?r=docentes/destroy&id=<?= (int) $docente['id'] ?>" style="display:inline" data-confirm="¿Eliminar este docente?">

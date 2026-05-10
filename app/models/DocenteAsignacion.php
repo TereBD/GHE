@@ -8,7 +8,9 @@ final class DocenteAsignacion
 {
     public static function allDetailed(): array
     {
-        $sql = 'SELECT dag.id, CONCAT(d.nombre, " ", d.apellido) AS docente, a.nombre AS asignatura, g.nombre AS grupo
+        $sql = 'SELECT dag.id, dag.docente_id, dag.es_tutoria,
+                       CONCAT(d.nombre, " ", d.apellido) AS docente,
+                       a.nombre AS asignatura, g.nombre AS grupo
                 FROM docente_asig_grupo dag
                 JOIN docentes d ON d.id = dag.docente_id
                 JOIN asignaturas a ON a.id = dag.asignatura_id
@@ -17,16 +19,40 @@ final class DocenteAsignacion
         return Database::connection()->query($sql)->fetchAll();
     }
 
-    public static function create(int $docenteId, int $asignaturaId, int $grupoId): void
+    public static function allGroupedByDocente(): array
+    {
+        $items = self::allDetailed();
+        $agrupado = [];
+        foreach ($items as $item) {
+            $docente = $item['docente'];
+            if (!isset($agrupado[$docente])) {
+                $agrupado[$docente] = [
+                    'docente_id' => $item['docente_id'],
+                    'docente' => $docente,
+                    'asignaciones' => [],
+                ];
+            }
+            $agrupado[$docente]['asignaciones'][] = [
+                'id' => $item['id'],
+                'asignatura' => $item['asignatura'],
+                'grupo' => $item['grupo'],
+                'es_tutoria' => $item['es_tutoria'],
+            ];
+        }
+        return $agrupado;
+    }
+
+    public static function create(int $docenteId, int $asignaturaId, int $grupoId, bool $esTutoria = false): void
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO docente_asig_grupo (docente_id, asignatura_id, grupo_id)
-             VALUES (:docente_id, :asignatura_id, :grupo_id)'
+            'INSERT INTO docente_asig_grupo (docente_id, asignatura_id, grupo_id, es_tutoria)
+             VALUES (:docente_id, :asignatura_id, :grupo_id, :es_tutoria)'
         );
         $stmt->execute([
             'docente_id' => $docenteId,
             'asignatura_id' => $asignaturaId,
             'grupo_id' => $grupoId,
+            'es_tutoria' => $esTutoria ? 1 : 0,
         ]);
     }
 

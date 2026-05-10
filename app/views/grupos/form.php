@@ -14,9 +14,42 @@
     <?php endif; ?>
 
     <form method="post" action="/GHE/public/index.php?r=<?= htmlspecialchars($action) ?>" class="validate">
-        <label>Nombre</label>
-        <input type="text" name="nombre" required value="<?= htmlspecialchars($grupo['nombre'] ?? '') ?>">
-        <div class="error-text"><?= htmlspecialchars($errores['nombre'] ?? '') ?></div>
+        <label>Nivel / Curso</label>
+        <select name="nivel_id" required>
+            <option value="">Selecciona</option>
+            <?php
+            $etapaActual = null;
+            foreach ($niveles as $n):
+                if ($etapaActual !== $n['etapa']):
+                    $etapaActual = $n['etapa'];
+                    echo '<optgroup label="' . htmlspecialchars($etapaActual) . '">';
+                endif;
+            ?>
+                <option value="<?= (int) $n['id'] ?>" <?= ($grupo['nivel_id'] ?? '') === (string) $n['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($n['nombre']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <div class="error-text"><?= htmlspecialchars($errores['nivel_id'] ?? '') ?></div>
+
+        <label>Letra del grupo</label>
+        <select name="letra" required>
+            <option value="">Selecciona</option>
+            <?php foreach (range('A', 'Z') as $l): ?>
+                <option value="<?= $l ?>" <?= ($grupo['letra'] ?? '') === $l ? 'selected' : '' ?>><?= $l ?></option>
+            <?php endforeach; ?>
+        </select>
+        <div class="error-text"><?= htmlspecialchars($errores['letra'] ?? '') ?></div>
+
+        <label>Tutor / Tutora</label>
+        <select name="tutor_id">
+            <option value="">Ninguno</option>
+            <?php foreach ($docentes as $d): ?>
+                <option value="<?= (int) $d['id'] ?>" <?= ($grupo['tutor_id'] ?? '') === (string) $d['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($d['nombre'] . ' ' . $d['apellido']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
 
         <div class="form-actions">
             <button class="btn btn-success" type="submit">Guardar</button>
