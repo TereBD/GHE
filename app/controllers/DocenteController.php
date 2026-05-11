@@ -84,6 +84,9 @@ final class DocenteController extends Controller
 
     private function validatedInput(): array
     {
+        $dias = $_POST['dias_excluidos'] ?? [];
+        $diasStr = is_array($dias) ? implode(',', $dias) : '';
+
         return [
             'nombre' => trim((string) ($_POST['nombre'] ?? '')),
             'apellido' => trim((string) ($_POST['apellido'] ?? '')),
@@ -91,6 +94,7 @@ final class DocenteController extends Controller
             'horas_maximas' => (int) ($_POST['horas_maximas'] ?? 0),
             'horas_pat' => (int) ($_POST['horas_pat'] ?? 0),
             'horas_proyecto' => (int) ($_POST['horas_proyecto'] ?? 0),
+            'dias_excluidos' => $diasStr,
         ];
     }
 

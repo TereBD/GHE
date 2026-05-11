@@ -15,6 +15,7 @@
             <a href="/GHE/public/index.php?r=asignaturas/index">Asignaturas</a>
             <a href="/GHE/public/index.php?r=grupos/index">Grupos</a>
             <a href="/GHE/public/index.php?r=asignaciones/index">Asignaciones</a>
+            <a href="/GHE/public/index.php?r=preasignaciones/index">Pre-asignaciones</a>
             <a href="/GHE/public/index.php?r=etapas/index">Etapas</a>
             <a href="/GHE/public/index.php?r=niveles/index">Niveles</a>
             <a href="/GHE/public/index.php?r=niveles/sesiones">Sesiones</a>

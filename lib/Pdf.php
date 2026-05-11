@@ -34,7 +34,7 @@ final class Pdf
         $this->titulo = $titulo;
     }
 
-    public function generar(array $data, string $nombreEntidad): void
+    public function generar(array $data, string $nombreEntidad, string $modo = 'grupo'): void
     {
         $this->nuevaPagina();
         $this->escribirCabecera($nombreEntidad);
@@ -88,7 +88,11 @@ final class Pdf
                 if ($sesion === 4) {
                     $this->escribirCelda($x, $this->y, $anchoDia, $altoFila, 'RECREO', 1, 1);
                 } elseif (isset($agrupado[$dia][$sesion])) {
-                    $txt = $agrupado[$dia][$sesion]['asignatura'] . "\n" . ($agrupado[$dia][$sesion]['docente'] ?? $agrupado[$dia][$sesion]['grupo'] ?? '');
+                    if ($modo === 'docente') {
+                        $txt = ($agrupado[$dia][$sesion]['grupo'] ?? '') . "\n" . $agrupado[$dia][$sesion]['asignatura'];
+                    } else {
+                        $txt = $agrupado[$dia][$sesion]['asignatura'] . "\n" . ($agrupado[$dia][$sesion]['docente'] ?? '');
+                    }
                     $this->escribirCelda($x, $this->y, $anchoDia, $altoFila, $txt, 1, 0);
                 } else {
                     $this->escribirCelda($x, $this->y, $anchoDia, $altoFila, '', 1, 0);

@@ -35,11 +35,17 @@
         <label>Letra del grupo</label>
         <select name="letra" required>
             <option value="">Selecciona</option>
-            <?php foreach (range('A', 'Z') as $l): ?>
+            <?php foreach (['A', 'B', 'C', 'D'] as $l): ?>
                 <option value="<?= $l ?>" <?= ($grupo['letra'] ?? '') === $l ? 'selected' : '' ?>><?= $l ?></option>
             <?php endforeach; ?>
         </select>
         <div class="error-text"><?= htmlspecialchars($errores['letra'] ?? '') ?></div>
+
+        <label>Nombre del grupo</label>
+        <input type="text" name="nombre" required
+               value="<?= htmlspecialchars($grupo['nombre'] ?? '') ?>"
+               placeholder="Se genera automáticamente (ej: 1º A)">
+        <div class="error-text"><?= htmlspecialchars($errores['nombre'] ?? '') ?></div>
 
         <label>Tutor / Tutora</label>
         <select name="tutor_id">

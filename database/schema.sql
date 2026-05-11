@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS docentes (
     tipo ENUM('tutor', 'especialista') NOT NULL DEFAULT 'tutor',
     horas_maximas INT NOT NULL,
     horas_pat INT NOT NULL DEFAULT 0,
-    horas_proyecto INT NOT NULL DEFAULT 0
+    horas_proyecto INT NOT NULL DEFAULT 0,
+    dias_excluidos VARCHAR(100) DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS asignaturas (
@@ -75,6 +76,15 @@ CREATE TABLE IF NOT EXISTS horarios (
     CONSTRAINT fk_horario_grupo FOREIGN KEY (grupo_id) REFERENCES grupos(id) ON DELETE CASCADE,
     CONSTRAINT fk_horario_asignatura FOREIGN KEY (asignatura_id) REFERENCES asignaturas(id) ON DELETE CASCADE,
     CONSTRAINT fk_horario_docente FOREIGN KEY (docente_id) REFERENCES docentes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS indisponibilidades (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    docente_id INT NOT NULL,
+    dia_semana VARCHAR(20) NOT NULL,
+    sesion INT NOT NULL,
+    UNIQUE KEY uniq_indisp (docente_id, dia_semana, sesion),
+    CONSTRAINT fk_indisp_docente FOREIGN KEY (docente_id) REFERENCES docentes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS usuarios (

@@ -26,7 +26,7 @@ $franjas = [
     6 => '12:40 a 13:30',
 ];
 
-function renderTablaHorario(array $dias, array $diasOrden, array $franjas): void
+function renderTablaHorario(array $dias, array $diasOrden, array $franjas, string $modo = 'grupo'): void
 {
     ?>
     <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
@@ -51,8 +51,13 @@ function renderTablaHorario(array $dias, array $diasOrden, array $franjas): void
                         <td style="border:1px solid #ddd;padding:.3rem .5rem;">
                             <?php if (isset($dias[$dia][$sesion])): ?>
                                 <div style="font-size:.8rem;line-height:1.3;">
-                                    <div style="font-weight:600;color:#1a237e;"><?= htmlspecialchars($dias[$dia][$sesion]['asignatura']) ?></div>
-                                    <div style="color:#666;"><?= htmlspecialchars($dias[$dia][$sesion]['docente'] ?? $dias[$dia][$sesion]['grupo'] ?? '') ?></div>
+                                    <?php if ($modo === 'docente'): ?>
+                                        <div style="font-weight:600;color:#1a237e;"><?= htmlspecialchars($dias[$dia][$sesion]['grupo'] ?? '') ?></div>
+                                        <div style="color:#888;font-size:.7rem;"><?= htmlspecialchars($dias[$dia][$sesion]['asignatura']) ?></div>
+                                    <?php else: ?>
+                                        <div style="font-weight:600;color:#1a237e;"><?= htmlspecialchars($dias[$dia][$sesion]['asignatura']) ?></div>
+                                        <div style="color:#666;"><?= htmlspecialchars($dias[$dia][$sesion]['docente'] ?? '') ?></div>
+                                    <?php endif; ?>
                                 </div>
                             <?php endif; ?>
                         </td>
@@ -112,7 +117,7 @@ function renderTablaHorario(array $dias, array $diasOrden, array $franjas): void
                 <?php foreach ($horarioDocentes as $docente => $dias): ?>
                     <div class="horario-grid" style="margin-bottom:1.5rem;">
                         <h3 style="margin-bottom:.5rem;color:#1a237e;">Profesor: <?= htmlspecialchars($docente) ?></h3>
-                        <?php renderTablaHorario($dias, $diasOrden, $franjas); ?>
+                        <?php renderTablaHorario($dias, $diasOrden, $franjas, 'docente'); ?>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>

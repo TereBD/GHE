@@ -14,6 +14,8 @@ final class HorarioGenerator
     private const ESPECIALIDADES = ['Educación Física', 'Francés', 'Inglés', 'Música', 'Religión'];
     private const PROYECTO_ASIGNATURA = 'Proyecto';
     private const PROYECTO_GRUPO = 'Proyecto';
+    private const PAT_ASIGNATURA = 'PAT';
+    private const PAT_GRUPO = 'PAT';
 
     public static function generar(): array
     {
@@ -45,11 +47,36 @@ final class HorarioGenerator
                 $nombreAsignaturas[(int) $r['id']] = $r['nombre'];
             }
 
+            // Cargar indisponibilidades por docente
+            $indisponibilidades = [];
+            foreach ($pdo->query('SELECT docente_id, dia_semana, sesion FROM indisponibilidades')->fetchAll() as $r) {
+                $indisponibilidades[(int) $r['docente_id']][$r['dia_semana'] . '-' . $r['sesion']] = true;
+            }
+
+            // Cargar pre-asignaciones (sesiones fijas que el generador debe respetar)
+            $preasignaciones = [];
+            foreach ($pdo->query('SELECT docente_id, grupo_id, asignatura_id, dia_semana, sesion FROM preasignaciones')->fetchAll() as $r) {
+                $preasignaciones[] = $r;
+            }
+
+            // Eliminar tareas que ya están cubiertas por pre-asignaciones
+            foreach ($preasignaciones as $pre) {
+                $gid = (int) $pre['grupo_id'];
+                $aid = (int) $pre['asignatura_id'];
+                foreach ($tareas as $ti => $t) {
+                    if ($t['grupo_id'] === $gid && $t['asignatura_id'] === $aid) {
+                        unset($tareas[$ti]);
+                        break;
+                    }
+                }
+            }
+            $tareas = array_values($tareas);
+
             $cargaInicial = [];
             foreach ($docentes as $id => $d) {
                 $cargaTutoria = $elegibles['cargaTutoria'][$id] ?? 0;
-                // Proyecto se quita de carga inicial: se asignará como sesiones reales después
-                $cargaInicial[$id] = $d['horas_pat'] + $cargaTutoria;
+                // Proyecto y PAT se quitan de carga inicial: se asignarán como sesiones reales después
+                $cargaInicial[$id] = $cargaTutoria;
             }
 
             $estado = [
@@ -64,7 +91,32 @@ final class HorarioGenerator
                 'atuId' => $atuId,
                 'tutores' => $tutores,
                 'nombreAsignaturas' => $nombreAsignaturas,
+                'especialistasAntesRecreo' => [],
+                'indisponibilidades' => $indisponibilidades,
             ];
+
+            // Marcar pre-asignaciones como ocupadas
+            foreach ($preasignaciones as $pre) {
+                $did = (int) $pre['docente_id'];
+                $gid = (int) $pre['grupo_id'];
+                $aid = (int) $pre['asignatura_id'];
+                $slot = $pre['dia_semana'] . '-' . $pre['sesion'];
+
+                $estado['ocupacionGrupo'][$gid][$slot] = true;
+                $estado['ocupacionDocente'][$did][$slot] = true;
+                $estado['cargaDocente'][$did] = ($estado['cargaDocente'][$did] ?? 0) + 1;
+                $estado['cargaGrupoDia'][$gid][$pre['dia_semana']] = ($estado['cargaGrupoDia'][$gid][$pre['dia_semana']] ?? 0) + 1;
+                $estado['cargaDocenteDia'][$did][$pre['dia_semana']] = ($estado['cargaDocenteDia'][$did][$pre['dia_semana']] ?? 0) + 1;
+
+                $estado['asignaciones'][] = [
+                    'grupo_id' => $gid,
+                    'asignatura_id' => $aid,
+                    'docente_id' => $did,
+                    'dia' => $pre['dia_semana'],
+                    'sesion' => (int) $pre['sesion'],
+                    'tutor_bloqueado' => null,
+                ];
+            }
 
             // Intentar resolver; si falla, reintentar con orden aleatorio
             $exito = false;
@@ -76,7 +128,7 @@ final class HorarioGenerator
                     $exito = true;
                     break;
                 }
-                // Resetear estado entre intentos
+                // Resetear estado entre intentos (conservando pre-asignaciones)
                 $estado['ocupacionGrupo'] = [];
                 $estado['ocupacionDocente'] = [];
                 $estado['ocupacionTutor'] = [];
@@ -85,6 +137,26 @@ final class HorarioGenerator
                 $estado['cargaDocenteDia'] = [];
                 $estado['asignaciones'] = [];
                 $estado['nodos'] = 0;
+                // Re-aplicar pre-asignaciones tras reset
+                foreach ($preasignaciones as $pre) {
+                    $did = (int) $pre['docente_id'];
+                    $gid = (int) $pre['grupo_id'];
+                    $aid = (int) $pre['asignatura_id'];
+                    $slot = $pre['dia_semana'] . '-' . $pre['sesion'];
+                    $estado['ocupacionGrupo'][$gid][$slot] = true;
+                    $estado['ocupacionDocente'][$did][$slot] = true;
+                    $estado['cargaDocente'][$did] = ($estado['cargaDocente'][$did] ?? 0) + 1;
+                    $estado['cargaGrupoDia'][$gid][$pre['dia_semana']] = ($estado['cargaGrupoDia'][$gid][$pre['dia_semana']] ?? 0) + 1;
+                    $estado['cargaDocenteDia'][$did][$pre['dia_semana']] = ($estado['cargaDocenteDia'][$did][$pre['dia_semana']] ?? 0) + 1;
+                    $estado['asignaciones'][] = [
+                        'grupo_id' => $gid,
+                        'asignatura_id' => $aid,
+                        'docente_id' => $did,
+                        'dia' => $pre['dia_semana'],
+                        'sesion' => (int) $pre['sesion'],
+                        'tutor_bloqueado' => null,
+                    ];
+                }
             }
 
             if (!$exito) {
@@ -96,6 +168,9 @@ final class HorarioGenerator
 
             // Asignar sesiones de Proyecto después del horario regular
             self::asignarProyectos($estado, $docentes, $pdo);
+
+            // Asignar sesiones de PAT después del horario regular
+            self::asignarPAT($estado, $docentes, $pdo);
 
             $insert = $pdo->prepare(
                 'INSERT INTO horarios (grupo_id, dia_semana, sesion, asignatura_id, docente_id)
@@ -129,13 +204,15 @@ final class HorarioGenerator
 
     private static function cargarDocentes(PDO $pdo): array
     {
-        $rows = $pdo->query('SELECT id, horas_maximas, horas_pat, horas_proyecto FROM docentes')->fetchAll();
+        $rows = $pdo->query('SELECT id, horas_maximas, horas_pat, horas_proyecto, dias_excluidos FROM docentes')->fetchAll();
         $docentes = [];
         foreach ($rows as $row) {
+            $diasExcluidos = $row['dias_excluidos'] ? explode(',', $row['dias_excluidos']) : [];
             $docentes[(int) $row['id']] = [
                 'horas_maximas' => (int) $row['horas_maximas'],
                 'horas_pat' => (int) $row['horas_pat'],
                 'horas_proyecto' => (int) $row['horas_proyecto'],
+                'dias_excluidos' => $diasExcluidos,
             ];
         }
         return $docentes;
@@ -275,7 +352,8 @@ final class HorarioGenerator
     {
         $cargaFija = [];
         foreach ($docentes as $id => $d) {
-            $cargaFija[$id] = $d['horas_pat'] + $d['horas_proyecto'];
+            // PAT y Proyecto se asignan como sesiones reales después, no cuentan como carga fija
+            $cargaFija[$id] = 0;
         }
         foreach ($elegibles['cargaTutoria'] as $id => $horas) {
             $cargaFija[$id] = ($cargaFija[$id] ?? 0) + $horas;
@@ -305,7 +383,7 @@ final class HorarioGenerator
             if ($totalMinimo > $d['horas_maximas']) {
                 throw new RuntimeException(
                     sprintf(
-                        'El docente ID %d tiene %d horas fijas (PAT+Proyecto+Tutorías+asignaturas exclusivas), pero su máximo es %d.',
+                        'El docente ID %d tiene %d horas fijas (Tutorías+asignaturas exclusivas), pero su máximo es %d.',
                         $id,
                         $totalMinimo,
                         $d['horas_maximas']
@@ -319,7 +397,11 @@ final class HorarioGenerator
         foreach ($docentes as $d) {
             $capTotal += $d['horas_maximas'];
         }
-        $cargaTotalTareas = count($tareas) + array_sum($cargaFija);
+        $cargaExtra = 0;
+        foreach ($docentes as $d) {
+            $cargaExtra += $d['horas_pat'] + $d['horas_proyecto'];
+        }
+        $cargaTotalTareas = count($tareas) + array_sum($cargaFija) + $cargaExtra;
         if ($cargaTotalTareas > $capTotal) {
             throw new RuntimeException(
                 sprintf(
@@ -404,6 +486,15 @@ final class HorarioGenerator
                         continue;
                     }
 
+                    // Comprobar días excluidos del docente
+                    if (in_array($dia, $docentes[$docenteId]['dias_excluidos'] ?? [], true)) {
+                        continue;
+                    }
+                    // Comprobar indisponibilidades por sesión
+                    if (isset($estado['indisponibilidades'][$docenteId][$slot])) {
+                        continue;
+                    }
+
                     // Si es ATU/Religión, el tutor del grupo también debe estar libre
                     if ($asignaturaId === $estado['atuId'] && isset($estado['tutores'][$grupoId])) {
                         $tutorId = $estado['tutores'][$grupoId];
@@ -450,8 +541,18 @@ final class HorarioGenerator
         // más sesiones con su tutor antes del recreo.
         $penalizacionEspecialidad = 0;
         $nombreAsig = $estado['nombreAsignaturas'][$asignaturaId] ?? '';
-        if (in_array($nombreAsig, self::ESPECIALIDADES, true) && $sesion <= 3) {
+        $esEspecialidad = in_array($nombreAsig, self::ESPECIALIDADES, true);
+        if ($esEspecialidad && $sesion <= 3) {
             $penalizacionEspecialidad = 20;
+        }
+
+        // Penalizar desequilibrio de especialistas antes del recreo entre grupos
+        $penalizacionDesequilibrio = 0;
+        if ($sesion <= 3 && $esEspecialidad) {
+            $valores = !empty($estado['especialistasAntesRecreo']) ? array_values($estado['especialistasAntesRecreo']) : [0];
+            $minEsp = min($valores);
+            $espActual = $estado['especialistasAntesRecreo'][$grupoId] ?? 0;
+            $penalizacionDesequilibrio = ($espActual - $minEsp) * 20;
         }
 
         $penalizacionConsecutiva = 0;
@@ -470,7 +571,7 @@ final class HorarioGenerator
             }
         }
 
-        return ($ratioCarga * 2) + ($cargaGrupoDia * 4) + ($cargaDocenteDia * 3) + $penalizacionHoraTardia + $penalizacionConsecutiva + $penalizacionEspecialidad;
+        return ($ratioCarga * 2) + ($cargaGrupoDia * 4) + ($cargaDocenteDia * 3) + $penalizacionHoraTardia + $penalizacionConsecutiva + $penalizacionEspecialidad + $penalizacionDesequilibrio;
     }
 
     private static function aplicarOpcion(array $tarea, array $opcion, array &$estado): void
@@ -498,6 +599,11 @@ final class HorarioGenerator
                 $estado['cargaDocenteDia'][$tutorId][$dia] = ($estado['cargaDocenteDia'][$tutorId][$dia] ?? 0) + 1;
                 $tutorBloqueado = $tutorId;
             }
+        }
+
+        // Track specialist balance before recess
+        if ($sesion <= 3 && in_array($estado['nombreAsignaturas'][$asignaturaId] ?? '', self::ESPECIALIDADES, true)) {
+            $estado['especialistasAntesRecreo'][$grupoId] = ($estado['especialistasAntesRecreo'][$grupoId] ?? 0) + 1;
         }
 
         $estado['asignaciones'][] = [
@@ -531,6 +637,11 @@ final class HorarioGenerator
             unset($estado['ocupacionTutor'][$tutorId][$slot]);
             $estado['cargaDocente'][$tutorId]--;
             $estado['cargaDocenteDia'][$tutorId][$dia]--;
+        }
+
+        // Untrack specialist balance
+        if ($sesion <= 3 && in_array($estado['nombreAsignaturas'][$tarea['asignatura_id']] ?? '', self::ESPECIALIDADES, true)) {
+            $estado['especialistasAntesRecreo'][$grupoId] = max(0, ($estado['especialistasAntesRecreo'][$grupoId] ?? 0) - 1);
         }
 
         array_pop($estado['asignaciones']);
@@ -567,7 +678,12 @@ final class HorarioGenerator
         $pdo->exec("INSERT IGNORE INTO asignaturas (nombre) VALUES ('" . self::PROYECTO_ASIGNATURA . "')");
         $proyAsigId = (int) $pdo->query("SELECT id FROM asignaturas WHERE nombre = '" . self::PROYECTO_ASIGNATURA . "' LIMIT 1")->fetchColumn();
 
-        $pdo->exec("INSERT IGNORE INTO grupos (nombre, nivel, letra) VALUES ('" . self::PROYECTO_GRUPO . "', 'PROYECTO', '')");
+        // Asegurar que existe un nivel "Proyecto" y crear el grupo
+        $pdo->exec("INSERT IGNORE INTO etapas (nombre, orden) VALUES ('Proyecto', 99)");
+        $proyEtapaId = (int) $pdo->query("SELECT id FROM etapas WHERE nombre = 'Proyecto' LIMIT 1")->fetchColumn();
+        $pdo->exec("INSERT IGNORE INTO niveles (nombre, etapa_id, orden) VALUES ('Proyecto', $proyEtapaId, 99)");
+        $proyNivelId = (int) $pdo->query("SELECT id FROM niveles WHERE nombre = 'Proyecto' LIMIT 1")->fetchColumn();
+        $pdo->exec("INSERT IGNORE INTO grupos (nombre, nivel_id, letra) VALUES ('" . self::PROYECTO_GRUPO . "', $proyNivelId, '')");
         $proyGrupoId = (int) $pdo->query("SELECT id FROM grupos WHERE nombre = '" . self::PROYECTO_GRUPO . "' LIMIT 1")->fetchColumn();
 
         // Proyecto restante por docente
@@ -587,6 +703,16 @@ final class HorarioGenerator
 
         if (empty($proyectoRestante)) {
             return;
+        }
+
+        // Contar Proyectos ya asignados por día por docente
+        $proyectosPorDiaDocente = [];
+        foreach ($estado['asignaciones'] as $a) {
+            if ($a['asignatura_id'] === $proyAsigId) {
+                $did = $a['docente_id'];
+                $d = $a['dia'];
+                $proyectosPorDiaDocente[$did][$d] = ($proyectosPorDiaDocente[$did][$d] ?? 0) + 1;
+            }
         }
 
         // Fase 1: cubrir todas las sesiones con al menos un Proyecto
@@ -620,8 +746,13 @@ final class HorarioGenerator
                     if (($estado['cargaDocente'][$docId] ?? 0) >= ($docentes[$docId]['horas_maximas'] ?? 0)) {
                         continue;
                     }
+                    // Evitar dos Proyectos el mismo día para el mismo docente
+                    if (($proyectosPorDiaDocente[$docId][$dia] ?? 0) > 0) {
+                        continue;
+                    }
 
                     self::registrarProyecto($estado, $proyGrupoId, $proyAsigId, $docId, $dia, $sesion);
+                    $proyectosPorDiaDocente[$docId][$dia] = ($proyectosPorDiaDocente[$docId][$dia] ?? 0) + 1;
                     $proyectoRestante[$docId]--;
                     break;
                 }
@@ -651,8 +782,88 @@ final class HorarioGenerator
                     if (($estado['cargaDocente'][$docId] ?? 0) >= ($docentes[$docId]['horas_maximas'] ?? 0)) {
                         continue;
                     }
+                    // Evitar dos Proyectos el mismo día para el mismo docente
+                    if (($proyectosPorDiaDocente[$docId][$dia] ?? 0) > 0) {
+                        continue;
+                    }
 
                     self::registrarProyecto($estado, $proyGrupoId, $proyAsigId, $docId, $dia, $sesion);
+                    $proyectosPorDiaDocente[$docId][$dia] = ($proyectosPorDiaDocente[$docId][$dia] ?? 0) + 1;
+                    $restante--;
+                }
+            }
+        }
+    }
+
+    private static function asignarPAT(array &$estado, array $docentes, PDO $pdo): void
+    {
+        $pdo->exec("INSERT IGNORE INTO asignaturas (nombre) VALUES ('" . self::PAT_ASIGNATURA . "')");
+        $patAsigId = (int) $pdo->query("SELECT id FROM asignaturas WHERE nombre = '" . self::PAT_ASIGNATURA . "' LIMIT 1")->fetchColumn();
+
+        $pdo->exec("INSERT IGNORE INTO etapas (nombre, orden) VALUES ('PAT', 99)");
+        $patEtapaId = (int) $pdo->query("SELECT id FROM etapas WHERE nombre = 'PAT' LIMIT 1")->fetchColumn();
+        $pdo->exec("INSERT IGNORE INTO niveles (nombre, etapa_id, orden) VALUES ('PAT', $patEtapaId, 99)");
+        $patNivelId = (int) $pdo->query("SELECT id FROM niveles WHERE nombre = 'PAT' LIMIT 1")->fetchColumn();
+        $pdo->exec("INSERT IGNORE INTO grupos (nombre, nivel_id, letra) VALUES ('" . self::PAT_GRUPO . "', $patNivelId, '')");
+        $patGrupoId = (int) $pdo->query("SELECT id FROM grupos WHERE nombre = '" . self::PAT_GRUPO . "' LIMIT 1")->fetchColumn();
+
+        $patRestante = [];
+        foreach ($docentes as $id => $d) {
+            $usadas = 0;
+            foreach ($estado['asignaciones'] as $a) {
+                if ($a['docente_id'] === $id && $a['asignatura_id'] === $patAsigId) {
+                    $usadas++;
+                }
+            }
+            $restante = $d['horas_pat'] - $usadas;
+            if ($restante > 0) {
+                $patRestante[$id] = $restante;
+            }
+        }
+
+        if (empty($patRestante)) {
+            return;
+        }
+
+        // Contar PAT ya asignados por día por docente
+        $patPorDiaDocente = [];
+        foreach ($estado['asignaciones'] as $a) {
+            if ($a['asignatura_id'] === $patAsigId) {
+                $did = $a['docente_id'];
+                $d = $a['dia'];
+                $patPorDiaDocente[$did][$d] = ($patPorDiaDocente[$did][$d] ?? 0) + 1;
+            }
+        }
+
+        foreach ($patRestante as $docId => $restante) {
+            if ($restante <= 0) {
+                continue;
+            }
+            foreach (self::DIAS as $dia) {
+                for ($sesion = 1; $sesion <= self::SESIONES_DIA; $sesion++) {
+                    if ($restante <= 0) {
+                        break 2;
+                    }
+                    if (in_array($sesion, self::SESIONES_EXCLUIDAS, true)) {
+                        continue;
+                    }
+                    $slot = $dia . '-' . $sesion;
+                    if (isset($estado['ocupacionGrupo'][$patGrupoId][$slot])) {
+                        continue;
+                    }
+                    if (isset($estado['ocupacionDocente'][$docId][$slot]) || isset($estado['ocupacionTutor'][$docId][$slot])) {
+                        continue;
+                    }
+                    if (($estado['cargaDocente'][$docId] ?? 0) >= ($docentes[$docId]['horas_maximas'] ?? 0)) {
+                        continue;
+                    }
+                    // Evitar dos PAT el mismo día para el mismo docente
+                    if (($patPorDiaDocente[$docId][$dia] ?? 0) > 0) {
+                        continue;
+                    }
+
+                    self::registrarProyecto($estado, $patGrupoId, $patAsigId, $docId, $dia, $sesion);
+                    $patPorDiaDocente[$docId][$dia] = ($patPorDiaDocente[$docId][$dia] ?? 0) + 1;
                     $restante--;
                 }
             }

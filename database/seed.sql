@@ -12,16 +12,18 @@ INSERT INTO niveles (nombre, etapa_id, orden) VALUES
 ('Infantil 3 años', 1, 1),
 ('Infantil 4 años', 1, 2),
 ('Infantil 5 años', 1, 3),
-('1º Primaria', 2, 4),
-('2º Primaria', 2, 5),
-('3º Primaria', 2, 6),
-('4º Primaria', 2, 7),
-('5º Primaria', 2, 8),
-('6º Primaria', 2, 9),
-('1º ESO', 3, 10),
-('2º ESO', 3, 11),
-('3º ESO', 3, 12),
-('4º ESO', 3, 13)
+('Infantil 3-4 años', 1, 4),
+('Infantil 4-5 años', 1, 5),
+('1º', 2, 6),
+('2º', 2, 7),
+('3º', 2, 8),
+('4º', 2, 9),
+('5º', 2, 10),
+('6º', 2, 11),
+('1º ESO', 3, 12),
+('2º ESO', 3, 13),
+('3º ESO', 3, 14),
+('4º ESO', 3, 15)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
 -- Docentes
@@ -49,18 +51,18 @@ INSERT INTO asignaturas (nombre) VALUES
 ('Filosofia')
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
--- Grupos (nivel_id = 4 = 1º Primaria)
+-- Grupos (nivel_id = 6 = 1º)
 INSERT INTO grupos (nombre, nivel_id, letra, tutor_id) VALUES
-('1ºA', 4, 'A', 1),
-('1ºB', 4, 'B', 2)
+('1º A', 6, 'A', 1),
+('1º B', 6, 'B', 2)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
--- Sesiones por nivel (nivel_id 4 = 1º Primaria, asignatura_ids 1-3)
+-- Sesiones por nivel (nivel_id 6 = 1º, asignatura_ids 1-3)
 DELETE FROM nivel_asignatura;
 INSERT INTO nivel_asignatura (nivel_id, asignatura_id, sesiones_semana) VALUES
-(4, 1, 5),
-(4, 2, 5),
-(4, 3, 4);
+(6, 1, 5),
+(6, 2, 5),
+(6, 3, 4);
 
 -- Asignaciones docente-asignatura-grupo
 DELETE FROM docente_asig_grupo;

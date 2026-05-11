@@ -29,7 +29,7 @@ final class Grupo
              JOIN niveles n ON n.id = g.nivel_id
              JOIN etapas e ON e.id = n.etapa_id
              LEFT JOIN docentes d ON d.id = g.tutor_id
-             WHERE g.nombre != 'Proyecto'
+             WHERE g.nombre NOT IN ('Proyecto', 'PAT')
              ORDER BY n.orden, g.letra"
         );
         return $stmt->fetchAll();

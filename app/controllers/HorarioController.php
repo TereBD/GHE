@@ -127,7 +127,7 @@ final class HorarioController extends Controller
 
         $pdf = new Pdf('L', 'mm', 'A4');
         $pdf->setTitulo('Horario - ' . $nombreDocente);
-        $pdf->generar($data, $nombreDocente);
+        $pdf->generar($data, $nombreDocente, 'docente');
         $pdf->Output('D', 'horario_' . str_replace(' ', '_', $nombreDocente) . '.pdf');
         exit;
     }

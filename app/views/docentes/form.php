@@ -41,6 +41,28 @@
         <input type="number" name="horas_proyecto" min="0" required value="<?= (int) ($docente['horas_proyecto'] ?? 0) ?>">
         <div class="error-text"><?= htmlspecialchars($errores['horas_proyecto'] ?? '') ?></div>
 
+        <details style="margin-top:1rem;border:1px solid #ddd;border-radius:4px;padding:.5rem;">
+            <summary style="cursor:pointer;font-weight:600;">Días excluidos (opcional)</summary>
+            <p style="font-size:.8rem;color:#555;margin:.5rem 0;">
+                Marca los días que este docente NO trabaja:
+            </p>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.5rem;">
+                <?php $excluidos = explode(',', $docente['dias_excluidos'] ?? ''); ?>
+                <?php foreach (['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $dia): ?>
+                    <label style="font-weight:400;cursor:pointer;">
+                        <input type="checkbox" name="dias_excluidos[]" value="<?= $dia ?>"
+                            <?= in_array($dia, $excluidos) ? 'checked' : '' ?>>
+                        <?= $dia ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($docente && !empty($docente['id'])): ?>
+                <a href="/GHE/public/index.php?r=preasignaciones/index" style="font-size:.85rem;">
+                    Gestionar pre-asignaciones de sesiones →
+                </a>
+            <?php endif; ?>
+        </details>
+
         <div class="form-actions">
             <button class="btn btn-success" type="submit">Guardar</button>
             <a class="btn btn-primary" href="/GHE/public/index.php?r=docentes/index">Cancelar</a>

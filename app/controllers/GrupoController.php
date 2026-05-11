@@ -44,7 +44,10 @@ final class GrupoController extends Controller
         }
         $nivelId = (int) ($_POST['nivel_id'] ?? 0);
         $letra = trim((string) ($_POST['letra'] ?? ''));
-        $nombre = self::generarNombre($nivelId, $letra);
+        $nombre = trim((string) ($_POST['nombre'] ?? ''));
+        if ($nombre === '') {
+            $nombre = self::generarNombre($nivelId, $letra);
+        }
         $tutorId = !empty($_POST['tutor_id']) ? (int) $_POST['tutor_id'] : null;
         Grupo::create($nombre, $nivelId, $letra, $tutorId);
         $this->redirect('grupos/index');
@@ -85,7 +88,10 @@ final class GrupoController extends Controller
         }
         $nivelId = (int) ($_POST['nivel_id'] ?? 0);
         $letra = trim((string) ($_POST['letra'] ?? ''));
-        $nombre = self::generarNombre($nivelId, $letra);
+        $nombre = trim((string) ($_POST['nombre'] ?? ''));
+        if ($nombre === '') {
+            $nombre = self::generarNombre($nivelId, $letra);
+        }
         $tutorId = !empty($_POST['tutor_id']) ? (int) $_POST['tutor_id'] : null;
         Grupo::update($id, $nombre, $nivelId, $letra, $tutorId);
         $this->redirect('grupos/index');
@@ -101,7 +107,7 @@ final class GrupoController extends Controller
     private static function generarNombre(int $nivelId, string $letra): string
     {
         $nivel = NivelModel::find($nivelId);
-        return ($nivel['nombre'] ?? '') . $letra;
+        return ($nivel['nombre'] ?? '') . ' ' . $letra;
     }
 
     private function validar(array $data): array
@@ -109,6 +115,7 @@ final class GrupoController extends Controller
         $errores = [];
         if ((int) ($data['nivel_id'] ?? 0) <= 0) $errores['nivel_id'] = 'Selecciona un nivel.';
         if (trim($data['letra'] ?? '') === '') $errores['letra'] = 'Introduce la letra del grupo.';
+        if (trim($data['nombre'] ?? '') === '') $errores['nombre'] = 'El nombre del grupo no puede estar vacío.';
         return $errores;
     }
 }

@@ -12,6 +12,7 @@ require_once __DIR__ . '/../app/controllers/GrupoController.php';
 require_once __DIR__ . '/../app/controllers/AsignacionController.php';
 require_once __DIR__ . '/../app/controllers/NivelController.php';
 require_once __DIR__ . '/../app/controllers/EtapaController.php';
+require_once __DIR__ . '/../app/controllers/PreasignacionController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 
 $route = $_GET['r'] ?? 'auth/login';
@@ -40,6 +41,7 @@ $routes = [
     'asignaciones' => new AsignacionController(),
     'niveles' => new NivelController(),
     'etapas' => new EtapaController(),
+    'preasignaciones' => new PreasignacionController(),
     'horarios' => new HorarioController(),
     'auth' => new AuthController(),
 ];

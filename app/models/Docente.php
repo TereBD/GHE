@@ -34,8 +34,8 @@ final class Docente
     public static function create(array $data): void
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO docentes (nombre, apellido, tipo, horas_maximas, horas_pat, horas_proyecto)
-             VALUES (:nombre, :apellido, :tipo, :horas_maximas, :horas_pat, :horas_proyecto)'
+            'INSERT INTO docentes (nombre, apellido, tipo, horas_maximas, horas_pat, horas_proyecto, dias_excluidos)
+             VALUES (:nombre, :apellido, :tipo, :horas_maximas, :horas_pat, :horas_proyecto, :dias_excluidos)'
         );
         $stmt->execute([
             'nombre' => $data['nombre'],
@@ -44,6 +44,7 @@ final class Docente
             'horas_maximas' => $data['horas_maximas'],
             'horas_pat' => $data['horas_pat'],
             'horas_proyecto' => $data['horas_proyecto'],
+            'dias_excluidos' => !empty($data['dias_excluidos']) ? $data['dias_excluidos'] : null,
         ]);
     }
 
@@ -53,7 +54,7 @@ final class Docente
             'UPDATE docentes
              SET nombre = :nombre, apellido = :apellido, tipo = :tipo,
                  horas_maximas = :horas_maximas, horas_pat = :horas_pat,
-                 horas_proyecto = :horas_proyecto
+                 horas_proyecto = :horas_proyecto, dias_excluidos = :dias_excluidos
              WHERE id = :id'
         );
         $stmt->execute([
@@ -64,6 +65,7 @@ final class Docente
             'horas_maximas' => $data['horas_maximas'],
             'horas_pat' => $data['horas_pat'],
             'horas_proyecto' => $data['horas_proyecto'],
+            'dias_excluidos' => !empty($data['dias_excluidos']) ? $data['dias_excluidos'] : null,
         ]);
     }
 
