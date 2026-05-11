@@ -1,6 +1,6 @@
 # GestHorarios Escolares (MVP)
 
-Aplicacion base en PHP 8 + MySQL para gestion de docentes y generacion automatica de horarios.
+Aplicación base en PHP 8 + MySQL para gestión de docentes y generacion automática de horarios.
 
 ## Requisitos
 
@@ -8,7 +8,7 @@ Aplicacion base en PHP 8 + MySQL para gestion de docentes y generacion automatic
 - PHP 8
 - MySQL 8
 
-## Instalacion
+## Instalación
 
 1. Copiar la carpeta `GHE` dentro de `htdocs`.
 2. Crear base de datos y tablas ejecutando:
